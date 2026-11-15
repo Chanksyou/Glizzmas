@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Fly Santa across snowy Bushwick and launch hot dogs into chimneys. A Christmas arcade game for phones and computers.">
 <meta name="theme-color" content="#090a15">
-<title>Santa’s Hot Dog Run</title>
+<title>Glizzmas By Made to Order</title>
 <style>
   * { box-sizing: border-box }
   body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 50% 28%, #1c1733 0, #090a15 65%); color: #fff4df; font: 15px system-ui, sans-serif }
   main { width: min(1120px, 100%) }
-  header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; color: #c4b7dd; font: 700 11px/1.3 ui-monospace, monospace; letter-spacing: .17em; text-transform: uppercase }
-  header strong { color: #ffe2a2 }
-  .lamp { display: inline-block; width: 7px; height: 7px; margin-right: 8px; background: #ffbd62; box-shadow: 0 0 10px #ff9f54 }
   .cabinet { overflow: hidden; border: 1px solid #54426d; border-radius: 16px; box-shadow: 0 20px 75px #02020aae, 0 0 35px #45336530; background: #11101f }
   .stage { position: relative; height: clamp(360px, 67svh, 640px); overflow: hidden; background: #080921; isolation: isolate; container-type: size }
   canvas { display: block; width: 100%; height: 100%; touch-action: manipulation }
@@ -27,7 +24,7 @@
   .overlay h1 { margin: 0; color: #fff0d2; font: 950 clamp(41px, 8.7vw, 98px)/.89 'Archivo Black', 'Arial Black', system-ui, sans-serif; letter-spacing: -.068em; text-transform: uppercase; text-shadow: 0 4px #49305b, 0 7px #1a102a }
   .overlay.ended { padding-block: 10px }
   .overlay .invitation { max-inline-size: 33cqw; margin: 0 auto clamp(8px, 2.2cqh, 16px); font-size: clamp(15px, min(3.1cqw, 4.8cqh), 34px); line-height: 1.14; letter-spacing: -.025em; text-wrap: balance; text-shadow: 0 2px #49305b, 0 3px #1a102a }
-  .overlay h1 span { display: block; color: #ffbf67; text-shadow: 0 4px #ac4147, 0 7px #29132e }
+  .overlay h1 span { display: block; margin-top: .16em; font-size: .62em; line-height: 1.05; letter-spacing: -.035em; text-transform: none; color: #ffbf67; text-shadow: 0 4px #ac4147, 0 7px #29132e }
   .overlay p { margin: 20px 0 18px; color: #ffebd6; font-weight: 650; text-shadow: 0 2px 5px #070616 }
   button { font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation }
   button:focus-visible, a:focus-visible { outline: 3px solid #fff0b1; outline-offset: 3px }
@@ -44,7 +41,6 @@
   kbd { min-width: 25px; padding: 3px 5px; border: 1px solid #7a6695; border-bottom-width: 2px; border-radius: 4px; color: #d8c4ef; font: 700 10px/1.2 ui-monospace, monospace; text-transform: uppercase }
   @media (max-width: 550px) {
     body { padding: 10px }
-    header { font-size: 9px; letter-spacing: .1em }
     .cabinet { border-radius: 11px }
     .stage { height: min(66svh, 146vw, 600px) }
     .overlay .invitation { max-inline-size: min(68cqw, 29ch); font-size: clamp(15px, 4.7cqw, 21px) }
@@ -68,8 +64,7 @@
 </style>
 </head>
 <body>
-<main aria-label="Santa’s Hot Dog Run">
-  <header><strong><span class="lamp" aria-hidden="true"></span>Bushwick, Brooklyn</strong><span>Christmas Eve</span></header>
+<main aria-label="Glizzmas By Made to Order">
   <div class="cabinet">
     <div class="stage" id="stage">
       <canvas id="sky" aria-label="Santa flies over snowy Brooklyn rooftops"></canvas>
@@ -78,7 +73,7 @@
       <div class="greeting" id="greeting" aria-hidden="true" hidden>Merry Glizzmas!</div>
       <div class="overlay" id="overlay">
         <div>
-          <h1 id="title">Santa’s <span>Hot Dog Run</span></h1>
+          <h1 id="title">Glizzmas <span>By Made to Order</span></h1>
           <p id="message">Fly over the rooftops. Land hot dogs in the chimneys.</p>
           <div class="overlay-actions">
             <a class="ticket-button" id="tickets" href="https://posh.vip/f/f8046?t=game" target="_blank" rel="noopener" hidden>Get tickets</a>
