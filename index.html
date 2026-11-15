@@ -100,8 +100,6 @@ const soundButton = get("sound");
 const music = new Audio("./assets/jingle-bells.flac");
 music.loop = true;
 music.volume = .34;
-const santaVoice = new Audio("./assets/merry-glizzmas.wav");
-santaVoice.volume = .88;
 let soundOn = true;
 let hasStarted = false;
 const art = new Image();
@@ -204,7 +202,6 @@ function toggleSound() {
   soundButton.textContent = soundOn ? "Sound on" : "Sound off";
   if (!soundOn) {
     music.pause();
-    santaVoice.pause();
   } else if (hasStarted) {
     playAudio(music);
   }
@@ -251,10 +248,6 @@ function updateGreeting() {
   if (elapsed >= nextGreeting) {
     greetingUntil = elapsed + 2.25;
     nextGreeting = elapsed + 5 + Math.random() * 6;
-    if (soundOn) {
-      santaVoice.currentTime = 0;
-      playAudio(santaVoice);
-    }
   }
   greeting.hidden = elapsed >= greetingUntil;
   if (greeting.hidden) return;
