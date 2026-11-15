@@ -100,6 +100,10 @@ const soundButton = get("sound");
 const music = new Audio("./assets/jingle-bells.flac");
 music.loop = true;
 music.volume = .34;
+const voiceUrl = "./assets/merry-glizzmas.mp3";
+let voiceContext;
+let voiceReady;
+let speaking;
 let soundOn = true;
 let hasStarted = false;
 const art = new Image();
@@ -196,13 +200,49 @@ function playAudio(track) {
   track.play().catch(() => {});
 }
 
+function prepareVoice() {
+  if (typeof AudioContext === "undefined") return;
+  if (!voiceContext) {
+    voiceContext = new AudioContext();
+    voiceReady = fetch(voiceUrl)
+      .then(response => {
+        if (!response.ok) throw new Error("Santa audio failed to load");
+        return response.arrayBuffer();
+      })
+      .then(bytes => voiceContext.decodeAudioData(bytes))
+      .catch(() => null);
+  }
+  voiceContext.resume().catch(() => {});
+}
+
+async function speakGreeting(deadline) {
+  if (!soundOn || !voiceReady) return;
+  const buffer = await voiceReady;
+  if (!buffer || !soundOn || mode !== "playing" || deadline !== greetingUntil || elapsed >= deadline) return;
+  const clip = voiceContext.createBufferSource();
+  clip.buffer = buffer;
+  clip.connect(voiceContext.destination);
+  clip.onended = () => {
+    if (speaking === clip) speaking = null;
+  };
+  speaking = clip;
+  clip.start();
+}
+
+function stopSpeaking() {
+  speaking?.stop();
+  speaking = null;
+}
+
 function toggleSound() {
   soundOn = !soundOn;
   soundButton.setAttribute("aria-pressed", String(soundOn));
   soundButton.textContent = soundOn ? "Sound on" : "Sound off";
   if (!soundOn) {
     music.pause();
+    stopSpeaking();
   } else if (hasStarted) {
+    prepareVoice();
     playAudio(music);
   }
 }
@@ -213,7 +253,10 @@ function play() {
   overlay.hidden = true;
   santaVelocity = -190;
   hasStarted = true;
-  if (soundOn && music.paused) playAudio(music);
+  if (soundOn) {
+    prepareVoice();
+    if (music.paused) playAudio(music);
+  }
 }
 
 function flap() {
@@ -232,6 +275,7 @@ function launch() {
 
 function end() {
   mode = "over";
+  stopSpeaking();
   greeting.hidden = true;
   heading.textContent = "Run over";
   message.textContent = "Come celebrate Gizzmas with Made to Order on Dec 4th at The House @ 29 Locust, Brooklyn";
@@ -246,8 +290,9 @@ function mouthX(roof) {
 
 function updateGreeting() {
   if (elapsed >= nextGreeting) {
-    greetingUntil = elapsed + 2.25;
+    greetingUntil = elapsed + 2.55;
     nextGreeting = elapsed + 5 + Math.random() * 6;
+    speakGreeting(greetingUntil);
   }
   greeting.hidden = elapsed >= greetingUntil;
   if (greeting.hidden) return;
