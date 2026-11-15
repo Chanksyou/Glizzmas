@@ -25,8 +25,8 @@
   .overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 50px 12px 27px; background: radial-gradient(ellipse at 50% 49%, #100c26db, #100c2680 35%, #0a0b2000 73%) }
   .overlay[hidden], .ticket-button[hidden], .ticket-link[hidden] { display: none }
   .overlay h1 { margin: 0; color: #fff0d2; font: 950 clamp(41px, 8.7vw, 98px)/.89 'Archivo Black', 'Arial Black', system-ui, sans-serif; letter-spacing: -.068em; text-transform: uppercase; text-shadow: 0 4px #49305b, 0 7px #1a102a }
-  .overlay.ended { padding-block: clamp(20px, 10cqh, 50px) 10px }
-  .overlay .invitation { margin-bottom: clamp(10px, 3cqh, 24px); font-size: min(98px, 11cqw, max(22px, calc(16cqh - 10px))); line-height: .94; text-wrap: balance }
+  .overlay.ended { padding-block: 10px }
+  .overlay .invitation { max-inline-size: 33cqw; margin: 0 auto clamp(8px, 2.2cqh, 16px); font-size: clamp(15px, min(3.1cqw, 4.8cqh), 34px); line-height: 1.14; letter-spacing: -.025em; text-wrap: balance; text-shadow: 0 2px #49305b, 0 3px #1a102a }
   .overlay h1 span { display: block; color: #ffbf67; text-shadow: 0 4px #ac4147, 0 7px #29132e }
   .overlay p { margin: 20px 0 18px; color: #ffebd6; font-weight: 650; text-shadow: 0 2px 5px #070616 }
   button { font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation }
@@ -47,6 +47,7 @@
     header { font-size: 9px; letter-spacing: .1em }
     .cabinet { border-radius: 11px }
     .stage { height: min(66svh, 146vw, 600px) }
+    .overlay .invitation { max-inline-size: min(68cqw, 29ch); font-size: clamp(15px, 4.7cqw, 21px) }
     .score { top: 11px; left: 11px; min-width: 82px; padding: 8px 10px }
     .sound { top: 11px; right: 11px }
     .controls button { gap: 6px; font-size: 13px }
