@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Fly Santa across snowy Bushwick and launch hot dogs into chimneys. A Christmas arcade game for phones and computers.">
+<meta name="theme-color" content="#090a15">
+<title>Santa’s Hot Dog Run</title>
+<style>
+  * { box-sizing: border-box }
+  body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 50% 28%, #1c1733 0, #090a15 65%); color: #fff4df; font: 15px system-ui, sans-serif }
+  main { width: min(1120px, 100%) }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; color: #c4b7dd; font: 700 11px/1.3 ui-monospace, monospace; letter-spacing: .17em; text-transform: uppercase }
+  header strong { color: #ffe2a2 }
+  .lamp { display: inline-block; width: 7px; height: 7px; margin-right: 8px; background: #ffbd62; box-shadow: 0 0 10px #ff9f54 }
+  .cabinet { overflow: hidden; border: 1px solid #54426d; border-radius: 16px; box-shadow: 0 20px 75px #02020aae, 0 0 35px #45336530; background: #11101f }
+  .stage { position: relative; height: clamp(360px, 67svh, 640px); overflow: hidden; background: #080921; isolation: isolate }
+  canvas { display: block; width: 100%; height: 100%; touch-action: manipulation }
+  .score { position: absolute; z-index: 2; top: 17px; left: 17px; display: grid; gap: 4px; min-width: 102px; padding: 10px 13px; border: 1px solid #b79bbe60; border-radius: 8px; background: #100d24d9 }
+  .score span { color: #e4c9e0; font: 700 10px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase }
+  .score output { color: #ffdc91; font: 900 28px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums }
+  .sound { position: absolute; z-index: 2; top: 17px; right: 17px; padding: 9px 11px; border: 1px solid #b79bbe60; border-radius: 7px; background: #100d24e8; color: #ffe2a2; font: 700 11px/1 ui-monospace, monospace }
+  .greeting { position: absolute; z-index: 1; left: clamp(83px, var(--santa-x, 20%), calc(100% - 83px)); top: max(71px, var(--santa-y, 45%)); transform: translate(-50%, -110%); padding: 7px 10px; border: 1px solid #ffca78; border-radius: 7px; background: #281532; color: #fff2ca; pointer-events: none; white-space: nowrap; font: 800 13px/1.1 ui-monospace, monospace; box-shadow: 0 3px 10px #090413a0 }
+  .greeting::after { position: absolute; top: 100%; left: 46%; content: ""; border: 5px solid transparent; border-top-color: #ffca78 }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 50px 12px 27px; background: radial-gradient(ellipse at 50% 49%, #100c26db, #100c2680 35%, #0a0b2000 73%) }
+  .overlay[hidden] { display: none }
+  .overlay h1 { margin: 0; color: #fff0d2; font: 950 clamp(41px, 8.7vw, 98px)/.89 'Archivo Black', 'Arial Black', system-ui, sans-serif; letter-spacing: -.068em; text-transform: uppercase; text-shadow: 0 4px #49305b, 0 7px #1a102a }
+  .overlay h1 span { display: block; color: #ffbf67; text-shadow: 0 4px #ac4147, 0 7px #29132e }
+  .overlay p { margin: 20px 0 18px; color: #ffebd6; font-weight: 650; text-shadow: 0 2px 5px #070616 }
+  button { font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation }
+  button:focus-visible { outline: 3px solid #fff0b1; outline-offset: 3px }
+  .start { padding: 11px 25px; border: 1px solid #ff9c7c; border-radius: 8px; background: #e55654; color: #190d23; box-shadow: 0 4px #8f303f, 0 7px 18px #09041470 }
+  .start:hover { background: #ff7768 }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; border-top: 1px solid #54426d }
+  .controls button { display: flex; justify-content: center; align-items: center; gap: 11px; min-height: 47px; padding: 6px; border: 1px solid #54426d; border-radius: 7px; background: #201931; color: #fff0d8 }
+  .controls button:hover { background: #312443 }
+  .controls button:active { transform: translateY(2px) }
+  kbd { min-width: 25px; padding: 3px 5px; border: 1px solid #7a6695; border-bottom-width: 2px; border-radius: 4px; color: #d8c4ef; font: 700 10px/1.2 ui-monospace, monospace; text-transform: uppercase }
+  @media (max-width: 550px) {
+    body { padding: 10px }
+    header { font-size: 9px; letter-spacing: .1em }
+    .cabinet { border-radius: 11px }
+    .stage { height: min(66svh, 146vw, 600px) }
+    .score { top: 11px; left: 11px; min-width: 82px; padding: 8px 10px }
+    .sound { top: 11px; right: 11px }
+    .controls button { gap: 6px; font-size: 13px }
+  }
+  @media (pointer: coarse) {
+    body { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) }
+    kbd { display: none }
+    .controls { user-select: none }
+    .controls button { min-height: 60px; font-size: 16px }
+    .sound { min-height: 44px }
+  }
+  @media (orientation: landscape) and (max-height: 560px) {
+    .stage { height: max(180px, calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 124px)) }
+    .overlay { padding-top: 38px; padding-bottom: 10px }
+    .overlay h1 { font-size: clamp(32px, 13svh, 72px) }
+    .overlay p { margin: 8px 0 10px }
+  }
+</style>
+</head>
+<body>
+<main aria-label="Santa’s Hot Dog Run">
+  <header><strong><span class="lamp" aria-hidden="true"></span>Bushwick, Brooklyn</strong><span>Christmas Eve</span></header>
+  <div class="cabinet">
+    <div class="stage" id="stage">
+      <canvas id="sky" aria-label="Santa flies over snowy Brooklyn rooftops"></canvas>
+      <div class="score"><span>Score</span><output id="score" aria-label="Score">0</output></div>
+      <button class="sound" id="sound" type="button" aria-label="Game sound" aria-pressed="true">Sound on</button>
+      <div class="greeting" id="greeting" aria-hidden="true" hidden>Merry Glizzmas!</div>
+      <div class="overlay" id="overlay">
+        <div>
+          <h1 id="title">Santa’s <span>Hot Dog Run</span></h1>
+          <p id="message">Fly over the rooftops. Land hot dogs in the chimneys.</p>
+          <button class="start" id="start" type="button">Start flying</button>
+        </div>
+      </div>
+    </div>
+    <div class="controls" aria-label="Flight controls">
+      <button id="flap" type="button"><kbd>Space</kbd> Flap</button>
+      <button id="throw" type="button"><kbd>X</kbd> Launch hot dog</button>
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+
+const get = id => document.getElementById(id);
+const stage = get("stage");
+const canvas = get("sky");
+const ctx = canvas.getContext("2d");
+const scoreLabel = get("score");
+const overlay = get("overlay");
+const heading = get("title");
+const message = get("message");
+const startButton = get("start");
+const greeting = get("greeting");
+const soundButton = get("sound");
+const music = new Audio("./assets/jingle-bells.flac");
+music.loop = true;
+music.volume = .34;
+const santaVoice = new Audio("./assets/merry-glizzmas.wav");
+santaVoice.volume = .88;
+let soundOn = true;
+let hasStarted = false;
+const art = new Image();
+art.src = "./assets/neon-city.png";
+
+const HEIGHT = 520;
+const SPEED = 152;
+const SHOT_SPEED = 190;
+const SHOT_GRAVITY = 580;
+const SCALE = 0.78;
+const tiles = [
+  { sourceX: 0, width: 263, roof: 1098, roofY: 410, left: 11, right: 88, mouth: 986 },
+  { sourceX: 263, width: 289, roof: 1168, roofY: 443, left: 74, right: 135, mouth: 1087 },
+  { sourceX: 552, width: 389, roof: 1210, roofY: 464, left: 215, right: 274, mouth: 1098 },
+];
+const sleigh = [
+  [50,304],[50,254],[66,246],[66,235],[77,226],[98,226],[111,232],[125,232],
+  [135,239],[160,238],[173,247],[190,261],[192,274],[200,276],[207,251],[229,250],
+  [233,264],[230,278],[215,296],[219,299],[270,296],[317,299],[352,293],
+  [326,271],[323,249],[351,246],[381,261],[388,275],[401,282],[389,294],[390,304],
+  [418,280],[419,241],[437,239],[467,242],[484,260],[487,279],[501,269],[505,227],
+  [527,224],[566,239],[581,249],[586,272],[606,255],[611,204],[634,204],[657,207],
+  [674,220],[684,236],[679,252],[683,284],[658,307],[633,289],[609,297],[584,325],
+  [561,312],[526,325],[496,346],[467,323],[439,336],[405,358],[385,348],[352,341],
+  [312,370],[279,367],[293,338],[304,324],[275,325],[251,325],[251,339],[269,349],
+  [265,369],[250,382],[93,419],[77,413],[68,399],[79,384],[67,362]
+];
+
+let width = 900;
+let unit = 1;
+let mode = "ready";
+let score = 0;
+let santaY = 238;
+let santaVelocity = 0;
+let nextShot = 0;
+let elapsed = 0;
+let nextGreeting = 0;
+let greetingUntil = 0;
+let scenery = 0;
+let tileIndex = 0;
+let roofs = [];
+let dogs = [];
+
+function addRoof(x) {
+  const artTile = tiles[tileIndex++ % tiles.length];
+  roofs.push({
+    ...artTile, x,
+    span: artTile.width * SCALE,
+    top: artTile.roofY - (artTile.roof - artTile.mouth) * SCALE,
+    lit: false, flash: 0,
+  });
+}
+
+function fillRoofs() {
+  let last = roofs.at(-1);
+  while (last.x + last.span < width + 210) {
+    addRoof(last.x + last.span);
+    last = roofs.at(-1);
+  }
+}
+
+function reset() {
+  score = 0;
+  scoreLabel.value = "0";
+  santaY = 238;
+  santaVelocity = 0;
+  nextShot = 0;
+  greeting.hidden = true;
+  nextGreeting = elapsed + 1.5 + Math.random() * 2.5;
+  greetingUntil = 0;
+  scenery = 0;
+  tileIndex = 0;
+  dogs = [];
+  roofs = [];
+  addRoof(Math.min(45, width * .08));
+  fillRoofs();
+}
+
+function resize() {
+  const rect = stage.getBoundingClientRect();
+  const pixelRatio = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = Math.round(rect.width * pixelRatio);
+  canvas.height = Math.round(rect.height * pixelRatio);
+  unit = canvas.height / HEIGHT;
+  width = canvas.width / unit;
+  if (roofs.length) fillRoofs();
+}
+
+function santaX() {
+  return Math.min(145, width * .205);
+}
+
+function playAudio(track) {
+  track.play().catch(() => {});
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  soundButton.setAttribute("aria-pressed", String(soundOn));
+  soundButton.textContent = soundOn ? "Sound on" : "Sound off";
+  if (!soundOn) {
+    music.pause();
+    santaVoice.pause();
+  } else if (hasStarted) {
+    playAudio(music);
+  }
+}
+
+function play() {
+  reset();
+  mode = "playing";
+  overlay.hidden = true;
+  santaVelocity = -190;
+  hasStarted = true;
+  if (soundOn && music.paused) playAudio(music);
+}
+
+function flap() {
+  if (mode !== "playing") {
+    play();
+    return;
+  }
+  santaVelocity = -245;
+}
+
+function launch() {
+  if (mode !== "playing" || elapsed < nextShot) return;
+  dogs.push({ x: santaX() + 19, y: santaY + 4, vy: -100 });
+  nextShot = elapsed + .29;
+}
+
+function end() {
+  mode = "over";
+  greeting.hidden = true;
+  heading.textContent = "Run over";
+  message.textContent = score === 1 ? "1 hot dog delivered" : score + " hot dogs delivered";
+  startButton.textContent = "Fly again";
+  overlay.hidden = false;
+  startButton.focus({ preventScroll: true });
+}
+
+function mouthX(roof) {
+  return roof.x + (roof.left + roof.right) * .5 * SCALE;
+}
+
+function updateGreeting() {
+  if (elapsed >= nextGreeting) {
+    greetingUntil = elapsed + 2.25;
+    nextGreeting = elapsed + 5 + Math.random() * 6;
+    if (soundOn) {
+      santaVoice.currentTime = 0;
+      playAudio(santaVoice);
+    }
+  }
+  greeting.hidden = elapsed >= greetingUntil;
+  if (greeting.hidden) return;
+  greeting.style.setProperty("--santa-x", (100 * santaX() / width) + "%");
+  greeting.style.setProperty("--santa-y", (100 * (santaY - 12) / HEIGHT) + "%");
+}
+
+function update(dt) {
+  scenery += SPEED * dt;
+  santaVelocity += 520 * dt;
+  santaY += santaVelocity * dt;
+  updateGreeting();
+  if (santaY < 30) {
+    santaY = 30;
+    santaVelocity = 0;
+  }
+
+  for (const roof of roofs) {
+    roof.x -= SPEED * dt;
+    roof.flash = Math.max(0, roof.flash - dt);
+  }
+  if (roofs[0].x + roofs[0].span < -2) roofs.shift();
+  fillRoofs();
+
+  for (const dog of dogs) {
+    const x = dog.x;
+    const y = dog.y;
+    dog.x += SHOT_SPEED * dt;
+    dog.vy += SHOT_GRAVITY * dt;
+    dog.y += dog.vy * dt;
+    for (const roof of roofs) {
+      if (y < roof.top && dog.y >= roof.top) {
+        const crossedAt = (roof.top - y) / (dog.y - y);
+        const relativeX = x + (dog.x - x) * crossedAt - roof.x - SPEED * dt * (1 - crossedAt);
+        if (relativeX >= roof.left * SCALE - 3 && relativeX <= roof.right * SCALE + 3) {
+          dog.spent = true;
+          if (!roof.lit) {
+            roof.lit = true;
+            roof.flash = 1;
+            scoreLabel.value = String(++score);
+          }
+          break;
+        }
+      }
+      if (dog.y >= roof.roofY && dog.x >= roof.x && dog.x <= roof.x + roof.span) {
+        dog.spent = true;
+        break;
+      }
+    }
+  }
+  dogs = dogs.filter(dog => !dog.spent && dog.x < width + 30 && dog.y < HEIGHT);
+
+  const x = santaX();
+  if (santaY + 13 > HEIGHT || roofs.some(roof => {
+    const onRoof = x + 22 > roof.x && x - 18 < roof.x + roof.span && santaY + 13 >= roof.roofY;
+    const onChimney = x + 22 > roof.x + roof.left * SCALE &&
+      x - 18 < roof.x + roof.right * SCALE && santaY + 13 >= roof.top;
+    return onRoof || onChimney;
+  })) end();
+}
+
+function backdrop() {
+  ctx.fillStyle = "#07081c";
+  ctx.fillRect(0, 0, width, HEIGHT);
+  if (!art.naturalWidth) return;
+  const span = Math.max(width * .7, 594);
+  const offset = (scenery * .17) % (span * 2);
+  for (let i = 0; i * span - offset < width; i++) {
+    const x = i * span - offset;
+    ctx.save();
+    if (i % 2) {
+      ctx.translate(x + span, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(art, 0, 500, 941, 472, 0, 0, span + 1, 386);
+    } else {
+      ctx.drawImage(art, 0, 500, 941, 472, x, 0, span + 1, 386);
+    }
+    ctx.restore();
+  }
+  const bottom = ctx.createLinearGradient(0, 330, 0, 450);
+  bottom.addColorStop(0, "#100e2a00");
+  bottom.addColorStop(.65, "#120d2e");
+  ctx.fillStyle = bottom;
+  ctx.fillRect(0, 330, width, 190);
+
+  const moonX = width * .83;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(moonX, 82, 44, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(art, 732, 290, 156, 155, moonX - 44, 38, 88, 88);
+  ctx.restore();
+}
+
+function drawRoof(roof) {
+  const { x, span, roofY, top, mouth, left, right } = roof;
+  const leftEdge = x + left * SCALE;
+  const rightEdge = x + right * SCALE;
+  const center = mouthX(roof);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(Math.floor(x), roofY - 13, Math.ceil(span) + 1, HEIGHT - roofY + 13);
+  ctx.rect(leftEdge - 2, top - 6, rightEdge - leftEdge + 4, roofY - top + 7);
+  ctx.clip();
+  if (art.naturalWidth) {
+    ctx.drawImage(art, roof.sourceX, mouth - 8, roof.width, 425,
+      Math.floor(x), top - 8 * SCALE, Math.ceil(span) + 1, 425 * SCALE);
+  }
+  ctx.restore();
+
+  if (roof.lit) {
+    const glow = ctx.createRadialGradient(center, top, 2, center, top, 54 + roof.flash * 26);
+    glow.addColorStop(0, "#ffee8ed9");
+    glow.addColorStop(.28, "#ffaf47a6");
+    glow.addColorStop(1, "#ff633b00");
+    ctx.fillStyle = glow;
+    ctx.fillRect(center - 85, top - 85, 170, 170);
+    ctx.fillStyle = "#fff2a4";
+    ctx.fillRect(leftEdge + 5, top, rightEdge - leftEdge - 10, 6);
+    for (let i = 0; i < 11; i++) {
+      const age = 1 - roof.flash;
+      ctx.globalAlpha = roof.flash;
+      ctx.fillStyle = i % 2 ? "#ff9a57" : "#ffedaf";
+      ctx.fillRect(center + Math.sin(i * 2.4) * age * (32 + i * 4),
+        top - age * (35 + i * 6) + age * age * 25, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+    if (roof.flash > 0) {
+      ctx.font = "900 22px ui-monospace, monospace";
+      ctx.textAlign = "center";
+      ctx.globalAlpha = Math.min(1, roof.flash * 1.7);
+      ctx.fillStyle = "#fff0a8";
+      ctx.fillText("+1", center, top - 22 - (1 - roof.flash) * 46);
+      ctx.globalAlpha = 1;
+    }
+  } else {
+    ctx.fillStyle = "#171127";
+    ctx.fillRect(leftEdge + 5, top + 3, rightEdge - leftEdge - 10, 5);
+    for (let i = 0; i < 5; i++) {
+      const drift = (elapsed * 31 + i * 11) % 55;
+      ctx.fillStyle = "rgba(198,173,217," + (.26 * (1 - drift / 55)) + ")";
+      ctx.fillRect(Math.round(center + drift * .42 - 3), Math.round(top - drift - 4), 6 + drift * .22, 4);
+    }
+  }
+}
+
+function drawHotDog(x, y, vy) {
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.rotate(Math.atan2(vy, SHOT_SPEED) * .7);
+  ctx.scale(1.25, 1.25);
+  ctx.fillStyle = "#572334";
+  ctx.fillRect(-9, -4, 18, 8);
+  ctx.fillStyle = "#ffad55";
+  ctx.fillRect(-10, -2, 20, 5);
+  ctx.fillStyle = "#ffe19a";
+  ctx.fillRect(-8, 3, 16, 2);
+  ctx.fillStyle = "#f66a4c";
+  ctx.fillRect(-8, -4, 16, 4);
+  ctx.fillStyle = "#ffe471";
+  for (let i = -6; i < 7; i += 4) ctx.fillRect(i, (i % 8 === 2 ? -2 : -3), 3, 1);
+  ctx.restore();
+}
+
+function drawSanta() {
+  const x = santaX();
+  const y = santaY + (mode === "ready" ? Math.sin(elapsed * 3) * 6 : 0);
+  const size = width < 460 ? .225 : .31;
+  ctx.save();
+  ctx.translate(x, y);
+  if (mode !== "ready") ctx.rotate(Math.max(-.22, Math.min(.31, santaVelocity / 1050)));
+  for (let i = 0; i < 11; i++) {
+    const drift = (elapsed * 49 + i * 9) % 55;
+    ctx.fillStyle = i % 3 ? "#ffb75c" : "#ffe7b3";
+    ctx.globalAlpha = (1 - drift / 55) * .85;
+    ctx.fillRect(-14 - drift, 10 + Math.sin(i * 17) * drift * .19, i % 3 ? 2 : 3, 2);
+  }
+  ctx.globalAlpha = 1;
+  if (art.naturalWidth) {
+    ctx.scale(size, size);
+    ctx.translate(-145, -326);
+    ctx.beginPath();
+    for (const [px, py] of sleigh) ctx.lineTo(px, py);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(art, 45, 200, 643, 222, 45, 200, 643, 222);
+  }
+  ctx.restore();
+}
+
+function draw() {
+  ctx.setTransform(unit, 0, 0, unit, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  backdrop();
+  for (const roof of roofs) {
+    if (roof.x < width && roof.x + roof.span > 0) drawRoof(roof);
+  }
+  for (const dog of dogs) drawHotDog(dog.x, dog.y, dog.vy);
+  drawSanta();
+}
+
+startButton.addEventListener("click", play);
+soundButton.addEventListener("click", toggleSound);
+get("flap").addEventListener("click", flap);
+canvas.addEventListener("click", () => {
+  if (mode === "playing") flap();
+});
+get("throw").addEventListener("click", launch);
+document.addEventListener("keydown", event => {
+  const flapKey = event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW";
+  if (!flapKey && event.code !== "KeyX") return;
+  // Preserve native Space activation for focused controls.
+  if (event.code === "Space" && (event.target === get("throw") || event.target === soundButton)) return;
+  event.preventDefault();
+  if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (flapKey) flap();
+  else launch();
+});
+new ResizeObserver(resize).observe(stage);
+resize();
+reset();
+let lastFrame;
+function frame(now) {
+  const dt = lastFrame === undefined ? 0 : Math.min(.034, (now - lastFrame) / 1000);
+  lastFrame = now;
+  elapsed += dt;
+  if (mode === "playing") update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
