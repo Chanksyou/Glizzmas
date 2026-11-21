@@ -1,0 +1,16 @@
+{
+	"name": "glizzmas-leaderboard",
+	"main": "worker.js",
+	"compatibility_date": "2026-11-21",
+	"workers_dev": true,
+	"vars": {
+		"ALLOWED_ORIGIN": "https://chanksyou.github.io"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "glizzmas-leaderboard",
+			"database_id": "cbb6116f-cd2c-4c31-b10d-06033abf0807"
+		}
+	]
+}

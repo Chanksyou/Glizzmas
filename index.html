@@ -34,6 +34,22 @@
   .ticket-button { display: inline-flex; min-height: 44px; align-items: center; padding: 10px 16px; border: 1px solid #ffe0a5; border-radius: 8px; background: #ffbf67; color: #190d23; text-decoration: none; font-weight: 850; box-shadow: 0 4px #ab6245; touch-action: manipulation }
   .ticket-button:hover { background: #ffdb9c }
   .ticket-link { display: inline-block; padding: 10px 8px 3px; color: #ffe4b4; font: 700 12px/1.3 ui-monospace, monospace; text-underline-offset: 3px; text-shadow: 0 2px 4px #070616 }
+  #leaderboard { max-width: 520px; margin: 18px auto 0; padding: 18px; border: 1px solid #54426d; border-radius: 12px; background: #141023 }
+  #leaderboard[hidden], #score-form[hidden] { display: none }
+  .leaderboard-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+  #leaderboard h2 { margin: 0; color: #ffdc91; font-size: 20px }
+  #leaderboard p { color: #d1bfdf; font-size: 13px; line-height: 1.4 }
+  #leaderboard button { min-height: 44px; padding: 8px 13px; border: 1px solid #756080; border-radius: 7px; background: #2a203b; color: #fff0d8 }
+  #leaderboard button:disabled { opacity: .6; cursor: default }
+  #score-form { margin-top: 16px; padding-bottom: 8px; border-bottom: 1px solid #54426d }
+  #score-form label { display: block; margin: 8px 0 6px; color: #ffe2a2; font-weight: 700 }
+  .score-entry { display: flex; flex-wrap: wrap; gap: 8px }
+  #nickname { flex: 1 1 150px; min-width: 0; padding: 10px; border: 1px solid #756080; border-radius: 7px; background: #100d24; color: #fff4df; font: 16px system-ui, sans-serif }
+  #nickname:focus-visible { outline: 2px solid #ffdc91; outline-offset: 2px }
+  #leaderboard-rows { list-style: none; padding: 0; margin: 12px 0 0 }
+  #leaderboard-rows li { display: grid; grid-template-columns: 24px 1fr auto; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px solid #54426d50; overflow-wrap: anywhere }
+  #leaderboard-rows .rank { color: #b59bc9; font: 12px ui-monospace, monospace }
+  #leaderboard-rows strong { color: #ffdc91; font-variant-numeric: tabular-nums }
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; border-top: 1px solid #54426d }
   .controls button { display: flex; justify-content: center; align-items: center; gap: 11px; min-height: 47px; padding: 6px; border: 1px solid #54426d; border-radius: 7px; background: #201931; color: #fff0d8 }
   .controls button:hover { background: #312443 }
@@ -80,6 +96,7 @@
             <button class="start" id="start" type="button">Start flying</button>
           </div>
           <a class="ticket-link" id="ticket-link" href="https://posh.vip/f/f8046?t=game" target="_blank" rel="noopener" hidden>posh.vip/f/f8046</a>
+          <a class="ticket-link" id="leaderboard-link" href="#leaderboard" hidden>Top 10</a>
         </div>
       </div>
     </div>
@@ -88,6 +105,22 @@
       <button id="throw" type="button"><kbd>X</kbd> Launch hot dog</button>
     </div>
   </div>
+  <section id="leaderboard" aria-labelledby="leaderboard-title" hidden>
+    <div class="leaderboard-heading">
+      <h2 id="leaderboard-title">Glizzmas Top 10</h2>
+      <button id="refresh-scores" type="button">Refresh</button>
+    </div>
+    <form id="score-form" hidden>
+      <label for="nickname">Submit your score · <span id="finished-score">0</span> hot dogs</label>
+      <div class="score-entry">
+        <input id="nickname" name="nickname" maxlength="20" autocomplete="nickname" placeholder="Your nickname" required>
+        <button id="submit-score" type="submit">Save score</button>
+      </div>
+      <p id="submission-status" role="status"></p>
+    </form>
+    <ol id="leaderboard-rows" aria-label="Top scores"></ol>
+    <p id="leaderboard-status" role="status">Loading scores…</p>
+  </section>
 </main>
 <script>
 "use strict";
@@ -256,6 +289,7 @@ function toggleSound() {
 function play() {
   reset();
   mode = "playing";
+  window.glizzmasLeaderboard?.startRun();
   overlay.hidden = true;
   santaVelocity = -190;
   hasStarted = true;
@@ -281,6 +315,7 @@ function launch() {
 
 function end() {
   mode = "over";
+  window.glizzmasLeaderboard?.finishRun(score);
   stopSpeaking();
   greeting.hidden = true;
   heading.textContent = "Come celebrate Gizzmas with Made to Order on Dec 4th at The House @ 29 Locust, Brooklyn";
@@ -501,6 +536,7 @@ canvas.addEventListener("click", () => {
 });
 get("throw").addEventListener("click", launch);
 document.addEventListener("keydown", event => {
+  if (event.target?.closest?.("input, textarea, select, a, #leaderboard")) return;
   const flapKey = event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW";
   if (!flapKey && event.code !== "KeyX") return;
   // Preserve native Space activation for focused controls.
@@ -524,5 +560,7 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 </script>
+<script src="./leaderboard-config.js"></script>
+<script src="./leaderboard.js"></script>
 </body>
 </html>
