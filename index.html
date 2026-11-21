@@ -16,6 +16,9 @@
   .score { position: absolute; z-index: 2; top: 17px; left: 17px; display: grid; gap: 4px; min-width: 102px; padding: 10px 13px; border: 1px solid #b79bbe60; border-radius: 8px; background: #100d24d9 }
   .score span { color: #e4c9e0; font: 700 10px/1 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase }
   .score output { color: #ffdc91; font: 900 28px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums }
+  .timer { position: absolute; z-index: 2; top: 17px; left: 50%; transform: translateX(-50%); display: grid; gap: 4px; padding: 9px 11px; border: 1px solid #b79bbe60; border-radius: 8px; background: #100d24d9; text-align: center }
+  .timer span { color: #e4c9e0; font: 700 9px/1 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase }
+  .timer output { color: #ffdc91; font: 900 22px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums }
   .sound { position: absolute; z-index: 2; top: 17px; right: 17px; padding: 9px 11px; border: 1px solid #b79bbe60; border-radius: 7px; background: #100d24e8; color: #ffe2a2; font: 700 11px/1 ui-monospace, monospace }
   .greeting { position: absolute; z-index: 1; left: clamp(83px, var(--santa-x, 20%), calc(100% - 83px)); top: max(71px, var(--santa-y, 45%)); transform: translate(-50%, -110%); padding: 7px 10px; border: 1px solid #ffca78; border-radius: 7px; background: #281532; color: #fff2ca; pointer-events: none; white-space: nowrap; font: 800 13px/1.1 ui-monospace, monospace; box-shadow: 0 3px 10px #090413a0 }
   .greeting::after { position: absolute; top: 100%; left: 46%; content: ""; border: 5px solid transparent; border-top-color: #ffca78 }
@@ -61,6 +64,7 @@
     .stage { height: min(66svh, 146vw, 600px) }
     .overlay .invitation { max-inline-size: min(68cqw, 29ch); font-size: clamp(15px, 4.7cqw, 21px) }
     .score { top: 11px; left: 11px; min-width: 82px; padding: 8px 10px }
+    .timer { top: 11px }
     .sound { top: 11px; right: 11px }
     .controls button { gap: 6px; font-size: 13px }
   }
@@ -85,6 +89,7 @@
     <div class="stage" id="stage">
       <canvas id="sky" aria-label="Santa flies over snowy Brooklyn rooftops"></canvas>
       <div class="score"><span>Score</span><output id="score" aria-label="Score">0</output></div>
+      <div class="timer"><span>Time</span><output id="time" aria-label="Seconds remaining" aria-live="off">100s</output></div>
       <button class="sound" id="sound" type="button" aria-label="Game sound" aria-pressed="true">Sound on</button>
       <div class="greeting" id="greeting" aria-hidden="true" hidden>Merry Glizzmas!</div>
       <div class="overlay" id="overlay">
@@ -130,6 +135,7 @@ const stage = get("stage");
 const canvas = get("sky");
 const ctx = canvas.getContext("2d");
 const scoreLabel = get("score");
+const timeLabel = get("time");
 const overlay = get("overlay");
 const heading = get("title");
 const message = get("message");
@@ -150,6 +156,9 @@ art.src = "./assets/neon-city.png";
 
 const HEIGHT = 520;
 const SPEED = 152;
+const RUN_SECONDS = 100;
+const SPEED_INTERVAL = 10;
+const SPEED_MULTIPLIER = 1.2;
 const SHOT_SPEED = 190;
 const SHOT_GRAVITY = 580;
 const SCALE = 0.78;
@@ -175,6 +184,8 @@ let width = 900;
 let unit = 1;
 let mode = "ready";
 let score = 0;
+let scrollSpeed = SPEED;
+let runStartedAt = 0;
 let santaY = 238;
 let santaVelocity = 0;
 let nextShot = 0;
@@ -207,6 +218,8 @@ function fillRoofs() {
 function reset() {
   score = 0;
   scoreLabel.value = "0";
+  timeLabel.value = RUN_SECONDS + "s";
+  scrollSpeed = SPEED;
   santaY = 238;
   santaVelocity = 0;
   nextShot = 0;
@@ -288,6 +301,7 @@ function toggleSound() {
 
 function play() {
   reset();
+  runStartedAt = performance.now();
   mode = "playing";
   window.glizzmasLeaderboard?.startRun();
   overlay.hidden = true;
@@ -346,7 +360,7 @@ function updateGreeting() {
 }
 
 function update(dt) {
-  scenery += SPEED * dt;
+  scenery += scrollSpeed * dt;
   santaVelocity += 520 * dt;
   santaY += santaVelocity * dt;
   updateGreeting();
@@ -356,7 +370,7 @@ function update(dt) {
   }
 
   for (const roof of roofs) {
-    roof.x -= SPEED * dt;
+    roof.x -= scrollSpeed * dt;
     roof.flash = Math.max(0, roof.flash - dt);
   }
   if (roofs[0].x + roofs[0].span < -2) roofs.shift();
@@ -371,7 +385,7 @@ function update(dt) {
     for (const roof of roofs) {
       if (y < roof.top && dog.y >= roof.top) {
         const crossedAt = (roof.top - y) / (dog.y - y);
-        const relativeX = x + (dog.x - x) * crossedAt - roof.x - SPEED * dt * (1 - crossedAt);
+        const relativeX = x + (dog.x - x) * crossedAt - roof.x - scrollSpeed * dt * (1 - crossedAt);
         if (relativeX >= roof.left * SCALE - 3 && relativeX <= roof.right * SCALE + 3) {
           dog.spent = true;
           if (!roof.lit) {
@@ -554,7 +568,17 @@ function frame(now) {
   const dt = lastFrame === undefined ? 0 : Math.min(.034, (now - lastFrame) / 1000);
   lastFrame = now;
   elapsed += dt;
-  if (mode === "playing") update(dt);
+  if (mode === "playing") {
+    const runSeconds = Math.max(0, (now - runStartedAt) / 1000);
+    const remaining = Math.max(0, RUN_SECONDS - runSeconds);
+    timeLabel.value = Math.ceil(remaining) + "s";
+    if (remaining === 0) {
+      end();
+    } else {
+      scrollSpeed = SPEED * SPEED_MULTIPLIER ** Math.floor(runSeconds / SPEED_INTERVAL);
+      update(dt);
+    }
+  }
   draw();
   requestAnimationFrame(frame);
 }

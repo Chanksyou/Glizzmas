@@ -63,10 +63,16 @@ test("runs validate, save once, retry safely, rank best scores, and expire", asy
   assert.ok(top.every((entry, index) => index === 0 || entry.score <= top[index - 1].score));
 
   const expired = (await (await call("/runs", {})).json()).runId;
+  now += 100000;
+  assert.equal((await call("/scores", { runId: expired, name: "Speedy", score: 196 })).status, 400);
+  now += 100000;
+  assert.equal((await call("/scores", { runId: expired, name: "Speedy", score: 196 })).status, 400, "waiting longer cannot exceed the 100-second distance");
+  assert.equal((await call("/scores", { runId: expired, name: "Speedy", score: 150 })).status, 200, "faster runs can earn totals above the old pace limit");
+  const pending = (await (await call("/runs", {})).json()).runId;
   now += 14400001;
-  assert.equal((await call("/scores", { runId: expired, name: "Elf", score: 1 })).status, 400);
+  assert.equal((await call("/scores", { runId: pending, name: "Elf", score: 1 })).status, 400);
   await call("/runs", {});
-  assert.equal(DB.sqlite.prepare("SELECT count(*) AS count FROM runs WHERE id = ?").get(expired).count, 0);
+  assert.equal(DB.sqlite.prepare("SELECT count(*) AS count FROM runs WHERE id = ?").get(pending).count, 0);
   assert.equal((await call("/scores", undefined, "https://unrelated.example")).status, 403);
   assert.equal((await call("/scores")).headers.get("Access-Control-Allow-Origin"), "https://chanksyou.github.io");
   const big = new Request("https://scores.example/scores", {

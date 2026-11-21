@@ -89,8 +89,11 @@ export default {
       if (!run || now - run.created_at > 14400000) {
         return reply({ error: "This run expired. Play again to submit a score." }, 400);
       }
-      // Casual score checks reject impossible totals. The browser still owns gameplay.
-      if (data.score > Math.floor((now - run.created_at) / 1000) + 3) {
+      // Bound deliveries by distance through the shortest roof at the accelerating pace.
+      const seconds = Math.min((now - run.created_at) / 1000, 100);
+      const stages = Math.floor(seconds / 10);
+      const distance = 152 * (10 * (1.2 ** stages - 1) / .2 + (seconds - stages * 10) * 1.2 ** stages);
+      if (data.score > Math.floor(distance / (263 * .78)) + 3) {
         return reply({ error: "That score could not be verified. Please play again." }, 400);
       }
       if (run.score !== null && (run.score !== data.score || run.name !== name)) {

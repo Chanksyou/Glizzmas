@@ -4,6 +4,8 @@ Play at https://chanksyou.github.io/Glizzmas/.
 
 The game is static HTML, JavaScript and assets. Pushes to `main` publish through GitHub Pages.
 
+Each run lasts up to 100 real seconds, including time spent in a background tab. Crashing ends it earlier. The scrolling speed compounds by 20% every 10 seconds and resets on replay. The leaderboard's plausibility check uses the corresponding distance traveled, capped at 100 seconds.
+
 ## Shared scores
 
 `leaderboard.js` shows the Top 10 and lets a player submit a nickname after a run. Each nickname gets one place, using its best score, with case-insensitive matching. Nicknames and submitted scores are public. Players do not need accounts.
